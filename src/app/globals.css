@@ -1,26 +1,33 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+@theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f8fafc; /* Forzamos light mode por ahora */
+    --foreground: #0f172a;
   }
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
+  background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remover focus outlines negras por defecto */
+input:focus, textarea:focus, button:focus {
+  outline: none;
 }
