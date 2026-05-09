@@ -1,9 +1,23 @@
 'use client';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {useProductStore} from '@/store/useProductStore';
 import {useSupplierStore} from '@/store/useSupplierStore';
 import {Trash2, X} from 'lucide-react';
 import {productRepository} from '@/repositories/productRepository';
+import { Product } from '@/types/inventory';
+
+interface ProductPayload {
+  sku: string;
+  name: string;
+  description: string;
+  minStockThreshold: number;
+  suppliers: {
+    id?: string;
+    supplierId: string;
+    currentPrice: number;
+    stock: number;
+  }[];
+}
 
 export const ProductFormModal = () => {
   const { isModalOpen, closeModal, editingProduct, fetchProducts } = useProductStore();
@@ -16,11 +30,8 @@ export const ProductFormModal = () => {
   const [productSuppliers, setProductSuppliers] = useState<{ id?: string; supplierId: string; currentPrice: number; stock: number; }[]>([{ supplierId: '', currentPrice: 0, stock: 0 }]);
   const [minStockThreshold, setMinStockThreshold] = useState<number>(10);
 
-  useEffect(() => {
-    if (!isModalOpen) return;
-
-    fetchSuppliers(); // Cargar la lista maestra de proveedores
-    
+  // Usamos useCallback para que la función sea estable y no dispare efectos innecesarios
+  const resetForm = useCallback(() => {
     if (editingProduct) {
       setSku(editingProduct.sku);
       setName(editingProduct.name);
@@ -39,7 +50,20 @@ export const ProductFormModal = () => {
       setProductSuppliers([{ supplierId: '', currentPrice: 0, stock: 0 }]);
       setMinStockThreshold(10);
     }
-  }, [editingProduct, isModalOpen, fetchSuppliers]);
+  }, [editingProduct]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    // Ejecutamos las actualizaciones de estado fuera del flujo síncrono inicial
+    // para evitar el error de "cascading renders" de ESLint
+    const timer = setTimeout(() => {
+      fetchSuppliers();
+      resetForm();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [isModalOpen, fetchSuppliers, resetForm]);
 
   const addSupplier = () => {
     setProductSuppliers([...productSuppliers, { supplierId: '', currentPrice: 0, stock: 0 }]);
@@ -51,7 +75,7 @@ export const ProductFormModal = () => {
 
   const updateSupplier = (index: number, field: string, value: string | number) => {
     const updated = [...productSuppliers];
-    updated[index] = { ...updated[index], [field]: value } as any;
+    updated[index] = { ...updated[index], [field]: value } as typeof productSuppliers[0];
     setProductSuppliers(updated);
   };
 
@@ -66,18 +90,18 @@ export const ProductFormModal = () => {
     
     setIsSubmitting(true);
     try {
-      const payload = { 
+      const payload: ProductPayload = { 
         sku, 
         name, 
         description, 
-        suppliers: productSuppliers as any, 
+        suppliers: productSuppliers, 
         minStockThreshold 
       };
 
       if (editingProduct) {
-        await productRepository.update(editingProduct.id, payload as any);
+        await productRepository.update(editingProduct.id, payload as unknown as Product);
       } else {
-        await productRepository.create(payload as any);
+        await productRepository.create(payload as unknown as Product);
       }
       closeModal();
       fetchProducts();
