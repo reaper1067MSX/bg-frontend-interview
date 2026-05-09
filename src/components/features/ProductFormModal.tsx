@@ -27,8 +27,8 @@ export const ProductFormModal = () => {
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [productSuppliers, setProductSuppliers] = useState<{ id?: string; supplierId: string; currentPrice: number; stock: number; }[]>([{ supplierId: '', currentPrice: 0, stock: 0 }]);
-  const [minStockThreshold, setMinStockThreshold] = useState<number>(10);
+  const [productSuppliers, setProductSuppliers] = useState<{ id?: string; supplierId: string; currentPrice: number | string; stock: number | string; }[]>([{ supplierId: '', currentPrice: 0, stock: 0 }]);
+  const [minStockThreshold, setMinStockThreshold] = useState<number | string>(10);
 
   // Usamos useCallback para que la función sea estable y no dispare efectos innecesarios
   const resetForm = useCallback(() => {
@@ -73,17 +73,40 @@ export const ProductFormModal = () => {
     setProductSuppliers(productSuppliers.filter((_, i) => i !== index));
   };
 
-  const updateSupplier = (index: number, field: string, value: string | number) => {
+  const updateSupplier = (index: number, field: string, value: string) => {
     const updated = [...productSuppliers];
-    updated[index] = { ...updated[index], [field]: value } as typeof productSuppliers[0];
+    let parsedValue: string | number = value;
+    
+    // Si el campo es numérico, intentamos convertir pero permitimos el string vacío para la UX
+    if (field === 'currentPrice' || field === 'stock') {
+      if (value === '') {
+        parsedValue = '';
+      } else {
+        parsedValue = field === 'currentPrice' ? parseFloat(value) : parseInt(value, 10);
+      }
+    }
+
+    updated[index] = { ...updated[index], [field]: parsedValue } as typeof productSuppliers[0];
     setProductSuppliers(updated);
   };
 
-  const totalValue = productSuppliers.reduce((sum, p) => sum + ((p.currentPrice || 0) * (p.stock || 0)), 0);
+  const totalValue = productSuppliers.reduce((sum, p) => {
+    const price = typeof p.currentPrice === 'number' ? p.currentPrice : 0;
+    const stock = typeof p.stock === 'number' ? p.stock : 0;
+    return sum + (price * stock);
+  }, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (productSuppliers.some(p => !p.supplierId || p.currentPrice <= 0)) {
+    
+    // Limpieza de datos antes de validar/enviar
+    const sanitizedSuppliers = productSuppliers.map(p => ({
+      ...p,
+      currentPrice: Number(p.currentPrice) || 0,
+      stock: Number(p.stock) || 0
+    }));
+
+    if (sanitizedSuppliers.some(p => !p.supplierId || p.currentPrice <= 0)) {
       alert('Asegúrese de seleccionar un proveedor válido y un precio mayor a 0');
       return;
     }
@@ -94,8 +117,8 @@ export const ProductFormModal = () => {
         sku, 
         name, 
         description, 
-        suppliers: productSuppliers, 
-        minStockThreshold 
+        suppliers: sanitizedSuppliers, 
+        minStockThreshold: Number(minStockThreshold) || 0
       };
 
       if (editingProduct) {
@@ -150,7 +173,7 @@ export const ProductFormModal = () => {
               type="number"
               value={minStockThreshold} 
               className="w-full border border-slate-300 rounded-lg p-2" 
-              onChange={e => setMinStockThreshold(parseInt(e.target.value) || 0)} 
+              onChange={e => setMinStockThreshold(e.target.value === '' ? '' : parseInt(e.target.value, 10))} 
             />
           </div>
           
@@ -178,12 +201,12 @@ export const ProductFormModal = () => {
                     <span className="absolute left-2 sm:left-3 top-2.5 sm:top-3 text-slate-400 text-sm">$</span>
                     <input 
                       required type="number" step="0.01" className="w-full bg-white border border-slate-300 rounded-lg py-2 px-2 pl-5 sm:p-2.5 sm:pl-7 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-0" 
-                      value={p.currentPrice || ''} onChange={e => updateSupplier(index, 'currentPrice', parseFloat(e.target.value))} placeholder="Precio"
+                      value={p.currentPrice} onChange={e => updateSupplier(index, 'currentPrice', e.target.value)} placeholder="Precio"
                     />
                   </div>
                   <input 
                     required type="number" className="flex-1 sm:w-24 bg-white border border-slate-300 rounded-lg p-2 sm:p-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-0" 
-                    value={p.stock || ''} onChange={e => updateSupplier(index, 'stock', parseInt(e.target.value))} placeholder="Stock"
+                    value={p.stock} onChange={e => updateSupplier(index, 'stock', e.target.value)} placeholder="Stock"
                   />
                   <button type="button" onClick={() => removeSupplier(index)} disabled={productSuppliers.length === 1} className="shrink-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 transition-colors">
                     <Trash2 className="w-5 h-5" />
