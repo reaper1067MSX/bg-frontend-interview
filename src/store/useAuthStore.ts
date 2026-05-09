@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('username', data.username);
       set({ isAuthenticated: true, username: data.username, error: null });
       return true;
-    } catch (err: any) {
+    } catch {
       set({ error: 'Credenciales inválidas', isAuthenticated: false });
       return false;
     }

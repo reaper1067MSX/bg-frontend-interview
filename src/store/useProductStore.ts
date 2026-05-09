@@ -31,7 +31,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       const products = await productRepository.getAll();
       set({ products, isLoading: false });
-    } catch (err: any) {
+    } catch {
       set({ error: 'Failed to fetch products', isLoading: false });
     }
   },
@@ -41,7 +41,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       await productRepository.updateStock(providerId, newStock);
       // Actualización optimista o refrescar
       await get().fetchProducts();
-    } catch (err: any) {
+    } catch {
       set({ error: 'Failed to update stock' });
     }
   }

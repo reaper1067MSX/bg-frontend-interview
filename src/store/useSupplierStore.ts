@@ -29,7 +29,7 @@ export const useSupplierStore = create<SupplierState>((set, get) => ({
     try {
       const suppliers = await supplierRepository.getAll();
       set({ suppliers, isLoading: false });
-    } catch (err) {
+    } catch {
       set({ error: 'Failed to fetch suppliers', isLoading: false });
     }
   },
@@ -39,8 +39,9 @@ export const useSupplierStore = create<SupplierState>((set, get) => ({
       await supplierRepository.create({ name, contactInfo });
       await get().fetchSuppliers();
       set({ error: null });
-    } catch (err: any) {
-      const message = err.response?.data?.description || 'Error al crear el proveedor';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { description?: string } } };
+      const message = error.response?.data?.description || 'Error al crear el proveedor';
       set({ error: message });
       throw err;
     }
@@ -51,8 +52,9 @@ export const useSupplierStore = create<SupplierState>((set, get) => ({
       await supplierRepository.delete(id);
       await get().fetchSuppliers();
       set({ error: null });
-    } catch (err: any) {
-      const message = err.response?.data?.description || 'Error al eliminar el proveedor';
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { description?: string } } };
+      const message = error.response?.data?.description || 'Error al eliminar el proveedor';
       set({ error: message });
       throw err;
     }
