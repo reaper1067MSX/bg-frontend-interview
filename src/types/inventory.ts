@@ -20,4 +20,5 @@ export interface Product {
   description: string;
   suppliers: ProductSupplier[]; // Antes era providers
   totalStock: number;
+  minStockThreshold: number;
 }

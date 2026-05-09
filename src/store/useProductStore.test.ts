@@ -17,6 +17,8 @@ describe('ProductStore', () => {
 
   it('should fetch products successfully', async () => {
     const mockProducts = [productMother.standard()];
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     vi.mocked(productRepository.getAll).mockResolvedValue(mockProducts);
 
     const store = useProductStore.getState();

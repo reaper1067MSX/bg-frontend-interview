@@ -14,6 +14,7 @@ export const ProductFormModal = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [productSuppliers, setProductSuppliers] = useState([{ supplierId: '', currentPrice: 0, stock: 0 }]);
+  const [minStockThreshold, setMinStockThreshold] = useState(10);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -30,6 +31,7 @@ export const ProductFormModal = () => {
         currentPrice: p.currentPrice,
         stock: p.stock
       })));
+      setMinStockThreshold(editingProduct.minStockThreshold || 10);
     } else {
       setSku('');
       setName('');
@@ -63,7 +65,7 @@ export const ProductFormModal = () => {
     
     setIsSubmitting(true);
     try {
-      const payload = { sku, name, description, suppliers: productSuppliers };
+      const payload = { sku, name, description, suppliers: productSuppliers, minStockThreshold };
       if (editingProduct) {
         await productRepository.update(editingProduct.id, payload);
       } else {
@@ -108,6 +110,11 @@ export const ProductFormModal = () => {
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Descripción</label>
             <input value={description} className="w-full border border-slate-300 rounded-lg p-2" onChange={e => setDescription(e.target.value)} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Minimo stock</label>
+            <input value={minStockThreshold} className="w-full border border-slate-300 rounded-lg p-2" onChange={e => setMinStockThreshold(e.target.value)} />
           </div>
           
           <div className="space-y-3 pt-4 border-t border-slate-200">
