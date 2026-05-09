@@ -1,9 +1,9 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { useProductStore } from '@/store/useProductStore';
-import { useSupplierStore } from '@/store/useSupplierStore';
-import { X, Trash2 } from 'lucide-react';
-import { productRepository } from '@/repositories/productRepository';
+import React, {useEffect, useState} from 'react';
+import {useProductStore} from '@/store/useProductStore';
+import {useSupplierStore} from '@/store/useSupplierStore';
+import {Trash2, X} from 'lucide-react';
+import {productRepository} from '@/repositories/productRepository';
 
 export const ProductFormModal = () => {
   const { isModalOpen, closeModal, editingProduct, fetchProducts } = useProductStore();
@@ -13,13 +13,13 @@ export const ProductFormModal = () => {
   const [sku, setSku] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [productSuppliers, setProductSuppliers] = useState([{ supplierId: '', currentPrice: 0, stock: 0 }]);
-  const [minStockThreshold, setMinStockThreshold] = useState(10);
+  const [productSuppliers, setProductSuppliers] = useState<{ id?: string; supplierId: string; currentPrice: number; stock: number; }[]>([{ supplierId: '', currentPrice: 0, stock: 0 }]);
+  const [minStockThreshold, setMinStockThreshold] = useState<number>(10);
 
   useEffect(() => {
-    if (isModalOpen) {
-      fetchSuppliers(); // Cargar la lista maestra de proveedores
-    }
+    if (!isModalOpen) return;
+
+    fetchSuppliers(); // Cargar la lista maestra de proveedores
     
     if (editingProduct) {
       setSku(editingProduct.sku);
@@ -37,6 +37,7 @@ export const ProductFormModal = () => {
       setName('');
       setDescription('');
       setProductSuppliers([{ supplierId: '', currentPrice: 0, stock: 0 }]);
+      setMinStockThreshold(10);
     }
   }, [editingProduct, isModalOpen, fetchSuppliers]);
 
@@ -50,7 +51,7 @@ export const ProductFormModal = () => {
 
   const updateSupplier = (index: number, field: string, value: string | number) => {
     const updated = [...productSuppliers];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: value } as any;
     setProductSuppliers(updated);
   };
 
@@ -65,11 +66,18 @@ export const ProductFormModal = () => {
     
     setIsSubmitting(true);
     try {
-      const payload = { sku, name, description, suppliers: productSuppliers, minStockThreshold };
+      const payload = { 
+        sku, 
+        name, 
+        description, 
+        suppliers: productSuppliers as any, 
+        minStockThreshold 
+      };
+
       if (editingProduct) {
-        await productRepository.update(editingProduct.id, payload);
+        await productRepository.update(editingProduct.id, payload as any);
       } else {
-        await productRepository.create(payload);
+        await productRepository.create(payload as any);
       }
       closeModal();
       fetchProducts();
@@ -114,7 +122,12 @@ export const ProductFormModal = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Minimo stock</label>
-            <input value={minStockThreshold} className="w-full border border-slate-300 rounded-lg p-2" onChange={e => setMinStockThreshold(e.target.value)} />
+            <input 
+              type="number"
+              value={minStockThreshold} 
+              className="w-full border border-slate-300 rounded-lg p-2" 
+              onChange={e => setMinStockThreshold(parseInt(e.target.value) || 0)} 
+            />
           </div>
           
           <div className="space-y-3 pt-4 border-t border-slate-200">
